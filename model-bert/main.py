@@ -19,9 +19,9 @@ def save_data_to_csv(data, path):
     f.close()
 
 LABELS_NUMBER = 2
-EPOCHS = 5
+EPOCHS = 10
 BATCH_SIZE = 32
-OPTIMIZER_LEARNING_RATE=5e-5
+OPTIMIZER_LEARNING_RATE=1e-4
 
 # Choose pretrained BERT model
 model_name = 'distilbert-base-uncased'
@@ -46,6 +46,37 @@ class DistilBertClassification(nn.Module):
         logits = self.linear2(x)
         return logits
 
+class LRScheduler():
+    """
+    Learning rate scheduler. If the validation loss does not decrease for the 
+    given number of `patience` epochs, then the learning rate will decrease by
+    by given `factor`.
+    """
+    def __init__(
+        self, optimizer, patience=2, min_lr=1e-6, factor=0.5
+    ):
+        """
+        new_lr = old_lr * factor
+        :param optimizer: the optimizer we are using
+        :param patience: how many epochs to wait before updating the lr
+        :param min_lr: least lr value to reduce to while updating
+        :param factor: factor by which the lr should be updated
+        """
+        self.optimizer = optimizer
+        self.patience = patience
+        self.min_lr = min_lr
+        self.factor = factor
+        self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau( 
+                self.optimizer,
+                mode='min',
+                patience=self.patience,
+                factor=self.factor,
+                min_lr=self.min_lr,
+                verbose=True
+            )
+    def __call__(self, val_loss):
+        self.lr_scheduler.step(val_loss)
+
 # Read data
 X_train, y_train = read_dataset("Data/train_data.csv")
 X_test, y_test = read_dataset("Data/test_data.csv")
@@ -64,6 +95,7 @@ for param in model.dbert.parameters():
 
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=OPTIMIZER_LEARNING_RATE)
+lr_scheduler = LRScheduler(optimizer)
 
 total_params = sum(p.numel() for p in model.parameters())
 total_params_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -107,14 +139,14 @@ line_loss_val, = ax_loss.plot([], [], 'o-', color='orange')
 
 line_loss_train.set_label("Train")
 line_loss_val.set_label("Validation")
-ax_loss.legend()
+ax_loss.legend(loc='upper left')
 
 line_acc_train, = ax_acc.plot([], [], 'o-')
 line_acc_val, = ax_acc.plot([], [], 'o-', color='orange')
 
 line_acc_train.set_label("Train")
 line_acc_val.set_label("Validation")
-ax_acc.legend()
+ax_acc.legend(loc='upper left')
 
 plt.show()
 
@@ -169,6 +201,9 @@ for e in range(EPOCHS):
     history["train_accuracy"].append(train_accuracy)
     history["valid_accuracy"].append(valid_accuracy)
 
+    # Update learning rate
+    lr_scheduler(history["valid_loss"][-1])
+
     # Update plots
     ax_loss.set_ylim([min(min(history["valid_loss"], history["train_loss"])) * 0.75, max(max(history["valid_loss"], history["train_loss"])) * 1.25])
 
@@ -184,7 +219,7 @@ for e in range(EPOCHS):
 end_time = datetime.now()
 training_time = (end_time - start_time).total_seconds() / 60
 
-print(f'Validation accuracy: {history["valid_accuracy"][-1]} %')
+print(f'Validation accuracy: {history["valid_accuracy"][-1] * 100} %')
 print(f'Validation loss: {history["valid_loss"][-1]}')
 print(f'Training time: {training_time} min')
 
