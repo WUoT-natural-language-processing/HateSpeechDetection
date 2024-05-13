@@ -22,7 +22,7 @@ def save_data_to_csv(data, path):
 LABELS_NUMBER = 2
 EPOCHS = 15
 BATCH_SIZE = 32
-OPTIMIZER_LEARNING_RATE=1e-5
+OPTIMIZER_LEARNING_RATE=5e-5
 
 # Choose pretrained BERT model
 model_name = 'distilbert-base-uncased'
@@ -180,19 +180,19 @@ for e in range(EPOCHS):
     line_acc_val.set_data(history["epoch"], history["valid_accuracy"])
 
     plt.pause(0.1)
-    
-# Measure time for training
-end_time = datetime.now()
-training_time = (end_time - start_time).total_seconds() / 60
-
-best = history["valid_accuracy"].argmax()
-print(f'Training time: {training_time} min')
-print()
-print(f'Validation accuracy: {history["valid_accuracy"][best] * 100} %')
-print(f'Validation loss: {history["valid_loss"][best]}')
-print()
 
 # Dump model
 torch.save(model.state_dict(), 'PyModel.sd')
 
 plt.savefig('model_result.png')
+
+# Measure time for training
+end_time = datetime.now()
+training_time = (end_time - start_time).total_seconds() / 60
+
+best = torch.argmax(torch.tensor(history["valid_accuracy"])).item()
+print(f'Training time: {training_time} min')
+print()
+print(f'Validation accuracy: {history["valid_accuracy"][best] * 100} %')
+print(f'Validation loss: {history["valid_loss"][best]}')
+print()
