@@ -227,14 +227,6 @@ print(f'Validation accuracy: {history["valid_accuracy"][best] * 100} %')
 print(f'Validation loss: {history["valid_loss"][best]}')
 print()
 
-# Test model
-prediction = model(tokenizer(X_test, padding=True, truncation=True, return_tensors='pt')['input_ids'])
-prediction_index = prediction.argmax(axis=1)
-accuracy = (prediction_index==torch.tensor(y_test))
-test_accuracy = (sum(accuracy) / len(accuracy)).item()
-
-print(f'Test accuracy: {test_accuracy} %')
-
 # Dump model
 torch.save(model.state_dict(), 'PyModel.sd')
 
