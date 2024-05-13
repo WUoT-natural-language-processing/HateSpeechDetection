@@ -1,5 +1,6 @@
 import pandas as pd
 import torch
+from sklearn.model_selection import train_test_split
 from torch import nn
 from transformers import DistilBertTokenizer, DistilBertModel
 from torch.utils.data import DataLoader, TensorDataset
@@ -81,10 +82,10 @@ class LRScheduler():
 X_train, y_train = read_dataset("Data/train_data.csv")
 X_test, y_test = read_dataset("Data/test_data.csv")
 
-X_train = X_train["tweet"].values.tolist()
-y_train = y_train
+X_train, X_valid, y_train, y_valid =  train_test_split(X_train["tweet"].values.tolist(), y_train.values.tolist(), test_size=0.11)
+
 X_test = X_test["tweet"].values.tolist()
-y_test = y_test
+y_test = y_test.values.tolist()
 
 # Model configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -106,8 +107,8 @@ print("Number of trainable parameters: ", total_params_trainable)
 train_dataset = TensorDataset(tokenizer(X_train, padding=True, truncation=True, return_tensors='pt')['input_ids'], torch.tensor(y_train))
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-val_dataset = TensorDataset(tokenizer(X_test, padding=True, truncation=True, return_tensors='pt')['input_ids'], torch.tensor(y_test))
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
+val_dataset = TensorDataset(tokenizer(X_valid, padding=True, truncation=True, return_tensors='pt')['input_ids'], torch.tensor(y_valid))
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 ## Prepare plots
 
@@ -219,10 +220,22 @@ for e in range(EPOCHS):
 end_time = datetime.now()
 training_time = (end_time - start_time).total_seconds() / 60
 
-print(f'Validation accuracy: {history["valid_accuracy"][-1] * 100} %')
-print(f'Validation loss: {history["valid_loss"][-1]}')
+best = history["valid_accuracy"].argmax()
 print(f'Training time: {training_time} min')
+print()
+print(f'Validation accuracy: {history["valid_accuracy"][best] * 100} %')
+print(f'Validation loss: {history["valid_loss"][best]}')
+print()
 
+# Test model
+prediction = model(tokenizer(X_test, padding=True, truncation=True, return_tensors='pt')['input_ids'])
+prediction_index = prediction.argmax(axis=1)
+accuracy = (prediction_index==torch.tensor(y_test))
+test_accuracy = (sum(accuracy) / len(accuracy)).item()
+
+print(f'Test accuracy: {test_accuracy} %')
+
+# Dump model
 torch.save(model.state_dict(), 'PyModel.sd')
 
 plt.savefig('model_result.png')
