@@ -1,0 +1,50 @@
+lr_5e-5_v2
+
+Training time: 104.71 min
+
+Validation accuracy: 86.746 %
+Validation loss: 0.3227
+
+Test accuracy: 86.607 %
+
+
+lr_1e-5
+
+Training time: 68.84 min
+
+Validation accuracy: 82.145 %
+Validation loss: 0.4128
+
+Test accuracy: 82.728 %
+
+
+lr_5e-5_v3
+
+Training time: 70.03 min
+
+Validation accuracy: 86.336 %
+Validation loss: 0.3349
+
+Test accuracy: 86.584 %
+
+
+Wrong cases                                                                            Correct prediction
+
+['eye tiger  # gn # boanoite # selfie # snapchat # teen # gay # gayboy # gayguy',       0
+ '# santa always # white ? # newswithed',                                               1
+ '# rip # ripchristina # tragic worst mass shooting u.s. history',                      0
+ 'user happy see something like done mobile , alabama .',                               0
+ 'user user 12 pro career dingers . b',                                                 0
+ 'user theres # glasto without user # glamping # glastochat # festival cant wait',      0
+ 'user aha welcome niggah',                                                             1
+ 'user next show monday fiddlers elbow camden . looking like going huge night ht',      0
+ 'david bitch',                                                                         1
+ 'user hoes dying attention',                                                           1
+ 'started 100 bricks im sold bitch',                                                    1
+ 'user nah , aint jewish , dont dig swine , thats',                                     0
+ 'user hes one majority fans like , salty gsw fans needed someone',                     0
+ 'mean.if blow foul , yellow situation ?',                                              0
+ '# business villy wang # tedinstitute',                                                1
+ 'user yup . hes former pm , 20 % nation think hes bees knees . dictionary , ok',       0
+ 'user user user come davis show celebrate retard',                                     1
+ 'user user kids fag']                                                                  1

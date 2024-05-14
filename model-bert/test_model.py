@@ -1,27 +1,26 @@
 import torch
-import pandas as pd
+import numpy
 from transformers import DistilBertTokenizer
-from main import DistilBertClassification
+from main import MODEL_NAME, DistilBertClassification, read_dataset
 
-def read_dataset(filename: str) -> tuple[pd.DataFrame, pd.DataFrame]:
-    df = pd.read_csv(filename)
-    y = df.loc[:, 'class']
-    X = df.drop(['class'], axis=1)
-    return X, y
-
-model_name = 'distilbert-base-uncased'
-tokenizer = DistilBertTokenizer.from_pretrained(model_name)
+tokenizer = DistilBertTokenizer.from_pretrained(MODEL_NAME)
 
 X_test, y_test = read_dataset("Data/test_data.csv")
-X_test = X_test["tweet"].values.tolist()
-y_test = y_test.values.tolist()
+X_test = X_test["tweet"].values[:100].tolist()
+y_test = y_test.values[:100].tolist()
 
 model_reloaded = DistilBertClassification()
-model_reloaded.load_state_dict(torch.load('PyModel.sd'))
+model_reloaded.load_state_dict(torch.load('results/lr_5e-5_v2.sd'))
 
+model_reloaded.eval()
 prediction = model_reloaded(tokenizer(X_test, padding=True, truncation=True, return_tensors='pt')['input_ids'])
 prediction_index = prediction.argmax(axis=1)
-accuracy = (prediction_index==torch.tensor(y_test))
-test_accuracy = (sum(accuracy) / len(accuracy)).item()
+matches = (prediction_index==torch.tensor(y_test))
 
-print(f'Test accuracy: {test_accuracy} %')
+indices = numpy.nonzero(1 - matches.numpy())[0]
+X_wrong = numpy.array(X_test)[indices.astype(int)]
+y_wrong = numpy.array(y_test)[indices.astype(int)]
+
+test_accuracy = (sum(matches) / len(matches)).item()
+
+print(f'Test accuracy: {test_accuracy * 100} %')
