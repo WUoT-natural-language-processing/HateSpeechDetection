@@ -14,11 +14,16 @@ EPOCHS = 10
 BATCH_SIZE = 32
 OPTIMIZER_LEARNING_RATE=5e-5
 
+TRAIN_DATA_PATH = "Data/train_data.csv"
+TEST_DATA_PATH = "Data/test_data.csv"
 
 class DistilBertClassification(nn.Module):
     def __init__(self):
         super(DistilBertClassification, self).__init__()
-        self.dbert = DistilBertModel.from_pretrained(MODEL_NAME, num_labels=LABELS_NUMBER) # Choose pretrained BERT model
+        # Choose pretrained BERT model
+        self.dbert = DistilBertModel.from_pretrained(MODEL_NAME, num_labels=LABELS_NUMBER)
+        
+        # Set classification layers
         self.dropout = nn.Dropout(p=0.2)
         self.linear1 = nn.Linear(768,64)
         self.ReLu = nn.ReLU()
@@ -48,8 +53,8 @@ def main() -> None:
     tokenizer = DistilBertTokenizer.from_pretrained(MODEL_NAME)
     
     # Read data
-    X_train, y_train = read_dataset("Data/train_data.csv")
-    X_test, y_test = read_dataset("Data/test_data.csv")
+    X_train, y_train = read_dataset(TRAIN_DATA_PATH)
+    X_test, y_test = read_dataset(TEST_DATA_PATH)
 
     X_train, X_valid, y_train, y_valid =  train_test_split(X_train["tweet"].values.tolist(), y_train.values.tolist(), test_size=0.11)
 
@@ -88,7 +93,7 @@ def main() -> None:
     history["valid_accuracy"] = []
 
     plt.ion()
-    fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(10, 5))
+    _, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(10, 5))
 
     ax_acc.set_ylim([0, 1])
 
@@ -151,16 +156,17 @@ def main() -> None:
         valid_loss = 0.0
         valid_accuracy = []
         
-        for X, y in tqdm(val_loader):
-            prediction = model(X)
-            loss = criterion(prediction, y)
+        with torch.no_grad():
+            for X, y in tqdm(val_loader):
+                prediction = model(X)
+                loss = criterion(prediction, y)
 
-            valid_loss += loss.item()
+                valid_loss += loss.item()
+                
+                prediction_index = prediction.argmax(axis=1)
+                accuracy = (prediction_index==y)
+                valid_accuracy += accuracy
             
-            prediction_index = prediction.argmax(axis=1)
-            accuracy = (prediction_index==y)
-            valid_accuracy += accuracy
-        
         valid_accuracy = (sum(valid_accuracy) / len(valid_accuracy)).item()
 
         # Populate history
